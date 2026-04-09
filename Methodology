@@ -1,0 +1,163 @@
+---
+
+## Methodology
+
+### Phase 1 — Data Foundation
+- Loaded and cleaned 9,789 FMCG transactions
+- Converted Order Date to datetime index
+- Calculated Lead Time Days (mean 3.96 days, std 1.75 days)
+- Removed 11 null rows (Postal Code) — 9,789 clean records
+
+### Phase 2 — Exploratory Data Analysis
+- Monthly sales trend with 3-month rolling average
+- Category breakdown — Technology $825K, Furniture $723K,
+  Office Supplies $703K
+- Sub-category SKU level demand view — Phones and Chairs top 2
+- Seasonality decomposition — trend, seasonal, residual components
+- Regional demand distribution — West 31.5%, East 29.3%
+- Sub-category x Region heatmap — Chairs dominate West ($100,023)
+
+### Phase 3 — ABC/XYZ Segmentation
+- ABC: Revenue contribution (A=70%, B=20%, C=10%)
+- XYZ: Coefficient of variation (X<0.5, Y=0.5-1.0, Z>1.0)
+- 17 sub-categories classified across 6 demand segments
+- Model assignment framework per segment
+
+### Phase 4 — External Variables (Demand Sensing)
+- US public holidays — 373 orders on holiday dates identified
+- Month, quarter, is_Q4, is_month_end, day_of_week features
+- Enriched feature matrix for Prophet and XGBoost
+
+### Phase 5 — Excel Baseline Models
+- Naive 3-Month Moving Average — MAPE 50.8%
+- Exponential Smoothing (alpha=0.3) — MAPE 46.71%
+- Weighted Moving Average (50/30/20) — MAPE 48.66%
+- Year-over-Year Growth (20.76% rate) — MAPE 27.73%
+- Seasonal Index — MAPE 26.74%
+- Linear Trend + Seasonal — MAPE 19.0% (Excel winner)
+
+### Phase 6 — Python Statistical and ML Models
+- Holt-Winters (additive trend + seasonal) — MAPE 17.40%
+- SARIMA (1,1,1)(1,1,1)12 — MAPE 27.05%
+- Prophet with US holiday regressors — MAPE 15.79% (overall winner)
+- XGBoost — tested and documented (insufficient training data)
+
+### Phase 7 — SKU Level Forecasting
+- Prophet forecast for Phones (AY segment) — MAPE 35.96%
+- Prophet forecast for Chairs (AY segment) — MAPE 48.71%
+- Croston's method for Copiers (BZ, CV=1.63) — MAE $4,510
+- Croston vs Prophet comparison on intermittent demand SKU
+
+### Phase 8 — Safety Stock Optimisation
+- Safety Stock = Z x sigma x sqrt(Lead Time)
+- Z = 1.65 (95% service level)
+- Compared Naive MA vs Holt-Winters vs Prophet
+- $470,146 annual holding cost saving identified
+
+### Phase 9 — S&OP Scenario Planning
+- Three scenarios: Pessimistic (-15%), Base, Optimistic (+15%)
+- November 2018 demand shock identified — exceeded optimistic by 14%
+- Fan chart aligned with S&OP consensus meeting format
+
+---
+
+## Full Model Scorecard
+
+| Rank | Model | Type | MAPE | MAE | Bias |
+|---|---|---|---|---|---|
+| 1 | Prophet | ML | 15.79% | $9,922 | -6.96% |
+| 2 | Holt-Winters | Statistical | 17.40% | $10,490 | -5.82% |
+| 3 | Linear Trend + Seasonal | Excel | 19.00% | $8,139 | -4.20% |
+| 4 | XGBoost | ML | 25.95% | $15,100 | -25.95% |
+| 5 | SARIMA | Statistical | 27.05% | $13,699 | +8.52% |
+| 6 | YoY Growth | Excel | 27.73% | $11,933 | -6.73% |
+| 7 | Seasonal Index | Excel | 26.74% | $9,703 | -10.92% |
+| 8 | Exp Smoothing | Excel | 46.71% | $17,981 | -11.66% |
+| 9 | Weighted MA | Excel | 48.66% | $18,900 | -8.70% |
+| 10 | Naive MA | Excel | 50.80% | $17,760 | -20.10% |
+
+---
+
+## Key Business Findings
+
+**1. Prophet beats every Excel method by minimum 3 MAPE points**
+Holiday-aware ML forecasting outperforms even the best
+statistical Excel approach (Linear Trend + Seasonal 19%).
+
+**2. Best Excel model beats Naive by 63%**
+Linear Trend + Seasonal demonstrates that even without ML
+structured statistical methods add significant value.
+
+**3. XGBoost needs more data**
+With only 36 months of training data XGBoost underperformed.
+In production with 3+ years of daily SKU data it would be
+the recommended model.
+
+**4. SKU level forecasting is harder than aggregate**
+Phones MAPE 35.96% vs aggregate 15.79% — random errors cancel
+at aggregate level. Intermittent demand SKUs (Copiers CV=1.63)
+require Croston's method not standard time series models.
+
+**5. November demand shock exceeded all scenarios**
+Actual $117,938 vs optimistic scenario $103,000 — proving
+that promotional data is required to forecast extreme peaks.
+
+---
+
+## How To Run
+
+### Requirements
+Python 3.11.x
+
+### Install Dependencies
+```bash
+pip install pandas numpy matplotlib seaborn scikit-learn
+pip install statsmodels prophet lightgbm xgboost
+pip install plotly ipykernel nbformat notebook
+```
+
+### Launch Notebook
+```bash
+jupyter notebook fmcg_forecasting.ipynb
+```
+
+### Run All Cells
+Kernel -> Restart and Run All
+
+---
+
+## IBF Accuracy Standards Used
+
+| Metric | Formula | Purpose |
+|---|---|---|
+| MAPE | Mean(ABS(Actual-Forecast)/Actual) | Model comparison |
+| MAE | Mean(ABS(Actual-Forecast)) | Dollar error |
+| Bias | Mean((Actual-Forecast)/Actual) | Direction of error |
+| FVA | Model MAPE vs Naive MAPE | Value added by model |
+
+---
+
+## Planning Methodology References
+
+- IBF (Institute of Business Forecasting) — MAPE and FVA standards
+- SAP IBP — Demand sensing and causal forecasting framework
+- APICS CPIM — Safety stock and inventory optimisation formulas
+- Lean Six Sigma DMAIC — Forecast improvement project structure
+
+---
+
+## Author
+
+**Akshay U. Veettil**
+MSc Data Science and AI | KPMG Lean Six Sigma Green Belt
+Demand Planning and S&OP Optimisation Specialist
+Halle (Saale), Germany
+
+LinkedIn: linkedin.com/in/akshay-unikkandan-veettil
+Email: akshayveettil@gmail.com
+
+---
+
+## Licence
+
+MIT Licence — free to use with attribution.
